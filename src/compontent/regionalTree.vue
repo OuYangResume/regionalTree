@@ -3,18 +3,26 @@
  * @Author: oouyang
  * @LastEditors: Please set LastEditors
  * @Date: 2019-03-01 15:10:46
- * @LastEditTime: 2019-03-01 17:46:11
+ * @LastEditTime: 2019-03-04 22:21:01
  -->
 
 <template>
   <div>
-    <p>区域树型组件</p>
-    <div v-for="(childTree,nodeIndex) in treeList" :key="nodeIndex" class="tree">
-      <div
-        v-for="(item,index) in childTree"
-        :key="index"
-        @click="_getItemList(item,nodeIndex)"
-      >{{item._source.areaname}}</div>
+    <p>区域树型组件:{{activeItem._source.areaname}}</p>
+    <div class="tree">
+      <div v-for="(childTree,nodeIndex) in treeList" :key="nodeIndex">
+        <div
+          class="childNode"
+          v-for="item in childTree"
+          :key="item._id"
+          @click="_getItemList(item,nodeIndex)"
+        >
+          <div
+            class="childNode_Item"
+            :class="{active : activeIndex == item._id,parent:showParent(item)}"
+          >{{item._source.areaname}}</div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -26,9 +34,17 @@ export default {
   data() {
     return {
       treeList: [], //核心数组
-      isopen:false
+      isopen: false,
+      activeIndex: null, //当前选择区域
+      activeItem: {
+        _source:{
+          areaname:"",
+        }
+      } //当前选择数据
     };
   },
+  computed: {},
+  filters: {},
   created() {},
   mounted() {
     let vm = this;
@@ -39,6 +55,18 @@ export default {
   },
   methods: {
     /**
+     * @description: 样式处理。高亮父级
+     * @param {type}
+     * @return:
+     */
+    showParent(item) {
+      return this.activeItem._id
+        ? this.activeItem._id.indexOf(item._id) != -1
+          ? true
+          : false
+        : false;
+    },
+    /**
      * @description:
      * @param {Object} item子树对象
      * @param {Number} nodeIndex用于判断当前点击有没有list
@@ -47,6 +75,8 @@ export default {
     _getItemList(item, nodeIndex) {
       console.log(item, nodeIndex);
       let vm = this;
+      vm.activeIndex = item._id;
+      vm.activeItem = item;
       let code = item._source.areacode;
       vm.getChildList(code).then(res => {
         //如果核心数组里面存在，先删除，再push
@@ -83,6 +113,21 @@ export default {
 <style lang="scss" scoped>
 .tree {
   display: flex;
+}
+.childNode {
+  display: flex;
+  .childNode_Item {
+    width: 100%;
+    cursor: pointer;
+  }
+  &:hover {
+    background: #f3f3f3;
+  }
+  .childNode_Item.active,
+  .childNode_Item.parent {
+    color: #2d8cf0;
+    background: #f3f3f3;
+  }
 }
 </style>
 
