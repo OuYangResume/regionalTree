@@ -3,7 +3,7 @@
  * @Author: oouyang
  * @LastEditors: Please set LastEditors
  * @Date: 2019-03-01 15:10:46
- * @LastEditTime: 2019-03-05 21:39:12
+ * @LastEditTime: 2019-03-06 21:21:24
  -->
 
 <template>
@@ -19,27 +19,26 @@
     <i class="iconfont icon-close-circle-fill"></i>-->
     <div v-clickoutside="handleClose">
       <div class="tree_input" @click="showTree">
-        <p>请选择</p>
+        <p>{{activeItem._source.areaname}}</p>
         <transition name="fade">
-          <i class="iconfont icon-down"></i>
-          <!-- <i class="ivu-icon ivu-icon-ios-loading ivu-load-loop" :class="[prefixCls + '-icon', prefixCls + '-icon-validate']" v-if="!icon"></i> -->
+          <i class="iconfont" :class="['icon-'+prefixCls ]"></i>
         </transition>
       </div>
       <transition name="fade">
         <div class="tree" id="tree" v-if="treeShow">
-          <div v-for="(childTree,nodeIndex) in treeList" :key="nodeIndex">
-            <div
-              class="childNode"
+          <ul v-for="(childTree,nodeIndex) in treeList" :key="nodeIndex">
+            <li
+              :class="{active : activeIndex == item._id,parent:showParent(item)}"
               v-for="item in childTree"
               :key="item._id"
               @click="_getItemList(item,nodeIndex)"
             >
-              <div
-                class="childNode_Item"
-                :class="{active : activeIndex == item._id,parent:showParent(item)}"
-              >{{item._source.areaname}}</div>
-            </div>
-          </div>
+              <div>
+                {{item._source.areaname}}
+                <i v-if="item._id.length<15" class="iconfont icon-right"></i>
+              </div>
+            </li>
+          </ul>
         </div>
       </transition>
     </div>
@@ -84,19 +83,32 @@ export default {
       activeItem: {
         //当前选择数据
         _source: {
-          areaname: ""
+          areaname: "请选择"
         }
       }
     };
   },
-  computed: {},
+  computed: {
+    prefixCls() {
+      let inputStyle = ["up", "down", "close-circle-fill"];
+      if (this.treeShow) {
+        if (this.activeItem._source.areaname == "请选择") {
+          return inputStyle[0];
+        } else {
+          return inputStyle[2];
+        }
+      } else {
+        return inputStyle[1];
+      }
+    }
+  },
   filters: {},
   created() {},
   mounted() {
     let vm = this;
     vm.getChildList("440305").then(res => {
       console.log(res);
-      vm.treeList.push(res.data);
+      vm.treeList.push(res);
     });
   },
   directives: {
@@ -127,11 +139,11 @@ export default {
     }
   },
   methods: {
-    handleClose(event) {
+    handleClose() {
       this.treeShow = false;
     },
     showTree() {
-      this.treeShow = true;
+        this.treeShow = true;    
     },
     /**
      * @description: 样式处理。高亮父级
@@ -163,16 +175,18 @@ export default {
           let arr = vm.treeList;
           arr = arr.slice(0, nodeIndex + 1);
           vm.treeList = arr;
-          vm.treeList.push(res.data);
+          vm.treeList.push(res);
         } else {
-          vm.treeList.push(res.data);
+          if (res != undefined) {
+            vm.treeList.push(res);
+          }
         }
       });
     },
     /**
      * @description: 根据父级区域code获取子区域数据
      * @param {parentCode}
-     * @return:
+     * @return: ArrayList
      */
     getChildList(parentCode) {
       return axios({
@@ -182,7 +196,10 @@ export default {
           parentCode: parentCode
         }
       }).then(response => {
-        return Promise.resolve(response.data);
+        console.log(response);
+        if (response.data.code == 200) {
+          return Promise.resolve(response.data.data);
+        }
       });
     }
   }
@@ -194,8 +211,7 @@ export default {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  width: 30%;
-  min-width: 300px;
+  width: 20%;
   height: 32px;
   line-height: 1.5;
   padding: 4px 7px;
@@ -219,20 +235,45 @@ export default {
 
 .tree {
   display: flex;
-}
-.childNode {
-  display: flex;
-  .childNode_Item {
-    width: 100%;
-    cursor: pointer;
-  }
-  &:hover {
-    background: #f3f3f3;
-  }
-  .childNode_Item.active,
-  .childNode_Item.parent {
-    color: #2d8cf0;
-    background: #f3f3f3;
+  position: absolute;
+  background-color: #fff;
+  box-sizing: border-box;
+  margin: 5px 0;
+  border-radius: 4px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+  ul {
+    min-width: 100px;
+    border-right: 1px solid #e8eaec;
+    padding: 0px;
+    margin: 0px;
+    list-style-type: none;
+    &:last-child {
+      margin-right: -1px;
+    }
+    li {
+      cursor: pointer;
+      position: relative;
+      cursor: pointer;
+      padding: 7px 16px;
+      clear: both;
+      color: #515a6e;
+      font-size: 12px;
+      &:hover {
+        background: #f3f3f3;
+      }
+      i {
+        font-size: 12px;
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        margin-top: -6px;
+      }
+    }
+    li.active,
+    li.parent {
+      color: #2d8cf0;
+      background: #f3f3f3;
+    }
   }
 }
 </style>
